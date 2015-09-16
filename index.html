@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><title>Angular 2</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="css/reveal.css">
+    <link rel="stylesheet" href="css/theme/black.css">
+    <link rel="stylesheet" href="lib/css/zenburn.css">
+    <link rel="stylesheet" href="css/custom.css">
+</head>
+<body>
+<div class="reveal">
+    <div class="slides">
+        <section><h2>Angular 2 Dependency Injection</h2></section>
+        <section><h2>Paul Spears</h2>
+            <div>paul.spears@oasisdigital.com</div>
+            <div>@dpsthree</div>
+        </section>
+        <section>
+            <div>Dependency Injection (DI) consists of three parts</div>
+            <ul>
+                <li>An Injector</li>
+                <li>Bindings</li>
+                <li>Instances</li>
+            </ul>
+            <aside class="notes">
+                Di in Angular2 is a core feature of the framework. It was one of the primary motivators behind Angular 2 and is one of the more mature pieces.
+                In fact it is so well polished that it can and has been used independently of the rest of framework. See Tero Parvainein's work integrating with backbone
+                At the heart of the DI system are three pieces: Injectors, bindings and Instances
+            </aside>
+        </section>
+        <section><h2>Injectors</h2>
+            <h3>Root Injector</h3>
+            <pre><code class="javascript">
+bootstrap(MyApp, [MyService])
+            </code></pre>
+            <h3>Child Injectors</h3>
+            <pre><code class="javascript">
+...
+@View({
+    bindings: [MyService2]
+})
+...
+            </code></pre>
+            <aside class="notes">
+                In order for Angular to inject dependencies there must be an Injector. The injector is responsible for supplying the requested dependencies.
+                When you bootstrap an application Angular will create a root Injector on your behalf. This is the set of dependencies that can be accessed
+                across the application. As an application grows additional components may have unique requirements outsie of what the root injector can provide.
+                When that is the case a child injector (created for each component) can be instructed on how to provide additional types of instances.
+            </aside>
+        </section>
+        <section><h2>Bindings</h2>
+            <pre><code class="javascript">
+bootstrap(MyApp, [MyService])
+            </code></pre>
+            <pre><code class="javascript">
+...
+@View({
+    bindings: [MyService2]
+})
+...
+            </code></pre>
+            <aside class="notes">
+                ...and the injectors are instructed by using bindings. The code that was shown is not the creation of the injectors rather it supplies the bindings
+                needed to inform it what to inject and how. This is highly sugared niceness. 
+            </aside>
+        </section>
+        <section><h2>Instances</h2>
+            <pre><code class="javascript">
+...
+@Component({
+    selector: 'my-app'
+})
+class MyApp {
+    constructor(myServiceInstance: MyService)
+}
+...
+            </code></pre>
+            <aside class="notes">
+                Its at this point, in the constructor, that we are actually requesting an instance from the injector. How it should be created/Which instance is determined
+                by the Injector Hiearchy and the bindings that were supplied to configure it. 
+            </aside>
+        </section>
+        <section>
+            Let's see some more code
+        </section>
+        <section>
+            <img src="images/parent.PNG">
+            <aside class="notes">
+                In the above sample line 3 creates a binding to “MyUtilsService”. This informs Angular that ParentComponent needs a fresh injector
+                to provide access to MyUtilsService. The reference to MyUtilsService on line 9 is the actual request to perform injection.
+                At this point Angular will create a new instance of MyUtilsService which is available in ParentComponent’s constructor.
+                
+                Let’s add another piece.
+            </aside>
+        </section>
+        <section>
+            <img src="images/child1.PNG">
+            <aside class="notes">
+                In this example ChildComponent1 is also referencing an injection of MyUtilsService. Since a binding was not specified
+                for MyUtilsService on ChildComponent1 Angular injects the same instance that was created for the ParentComponent.
+                But what if we wanted a new instance? Let’s say that ParentComponent manipulates the state of MyUtilsService in some
+                way that makes its use undesirable in some additional child component. To achieve this a new instance would be needed
+                instead of using the parent’s copy.
+            </aside>
+        </section>
+        <section>
+            <img src="images/child2.PNG">
+            <aside class="notes">
+                Now a new instance of the MyUtilsService is requested on line 9 by creating a child injector. As a result,
+                ChildComponent2’s constructor will be supplied with a different instance than was injected into the ParentComponent.
+                Lets add one more layer and assume that ChildComponent2 is the only component in this hierarchy in need of a separate
+                instance of MyUtilsService. ChildComponent2’s child wants to inject the same instance that was created for and injected
+                into ParentComponent. One may assume the following approach can be taken:
+            </aside>
+        </section>
+        <section>
+            <img src="images/grandchild.PNG">
+            <aside class="notes">
+                However, the GrandChildComponent is receiving a third instance of MyUtilsService. This is also not ideal.
+                To correct this and achieve the desired result let’s revisit ChildComponent2 and make a few small adjustments.
+            </aside>
+        </section>
+        <section>
+            <img src="images/view bindings.PNG">
+            <aside class="notes">
+                View bindings allow for the creation of injectors that will create instances of an injectable that are only
+                available to the component they are declared on. When MyUtilsService is injected into the GrandchildComponent the DI system will
+                climb the hierarchy looking for an injector that is aware of MyUtilsService. The instance created by ChildComponent2 is
+                not present in the hierarchy and instead the instance created on the ParentComponent is used.
+            </aside>
+        </section>
+        <section>
+            <img src="images/component tree 2.png">
+        </section>
+        <section>
+            <h2>That's all!</h2>
+            <h3>Questions?</h3>
+        </section>
+    </div>
+</div>
+<script src="js/reveal.js"></script>
+<script src="lib/js/head.min.js"></script>
+<script>Reveal.initialize({
+    controls: false,
+    progress: true,
+    history: false,
+    center: true,
+    theme: "black",
+    transition: "linear",
+    dependencies: [
+        {src: "plugin/notes/notes.js", async: true},
+        { src: 'plugin/highlight/highlight.js', async: true, condition: function() { return !!document.querySelector( 'pre code' ); }, callback: function() { hljs.initHighlightingOnLoad(); } },
+    ]
+});
+</script>
+</body>
+</html>
